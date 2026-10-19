@@ -1,0 +1,402 @@
+// MEDIDAS HTML para el visual 'HTML Content' (carpeta 09 HTML de _Medidas)
+
+// Todas las páginas (franja superior)
+HTML Contexto =
+VAR _anio = IF ( HASONEVALUE ( dim_tiempo[anio] ), FORMAT ( MAX ( dim_tiempo[anio] ), "0" ), "2019-2025" )
+VAR _filtroGeo = ISFILTERED ( dim_departamento[departamento] ) || ISFILTERED ( dim_departamento[region] )
+VAR _nDep = COUNTROWS ( VALUES ( dim_departamento[departamento] ) )
+VAR _ter =
+    IF ( _filtroGeo,
+        IF ( _nDep <= 3,
+            CONCATENATEX ( VALUES ( dim_departamento[departamento] ), dim_departamento[departamento], ", ", dim_departamento[departamento], ASC ),
+            _nDep & " departamentos" ),
+        "Colombia" )
+VAR _eve = IF ( ISFILTERED ( dim_evento[evento] ), CONCATENATEX ( VALUES ( dim_evento[evento] ), dim_evento[evento], ", " ), "Dengue y dengue grave" )
+VAR _sem = MOD ( CALCULATE ( [Última Semana con Datos], REMOVEFILTERS ( dim_tiempo ) ), 100 )
+VAR _b = "<b style='color:#0b0b0b;'>"
+RETURN
+    "<div style='font-family:Segoe UI,sans-serif;color:#0b0b0b;font-size:17.5px;color:#52514e;padding:2px 0;'>"
+        & "Año " & _b & _anio & "</b> &nbsp;·&nbsp; Territorio " & _b & _ter & "</b>"
+        & " &nbsp;·&nbsp; Evento " & _b & _eve & "</b>"
+        & " &nbsp;·&nbsp; Fuente: SIVIGILA (INS), DANE, Open-Meteo · datos hasta la semana " & _sem
+        & "</div>"
+
+// Página 1 · Resumen ejecutivo (franja de KPI)
+HTML P1 KPIs =
+VAR _anio = [Año Seleccionado]
+VAR _casos = [Casos]
+VAR _var = [Var % vs Año Anterior]
+VAR _inc = [Incidencia x100k]
+VAR _gr = [% Dengue Grave]
+VAR _hosp = [% Hospitalización]
+VAR _fall = [Fallecidos]
+VAR _let = [Letalidad %]
+VAR _letAA = CALCULATE ( [Letalidad %], REMOVEFILTERS ( dim_tiempo ), dim_tiempo[anio] = _anio - 1 )
+VAR _dLet = ( _let - _letAA ) * 100
+VAR _zona = [Zona Última Semana]
+VAR _sem = MOD ( [Última Semana con Datos], 100 )
+VAR _t =
+    "<div style='flex:1;min-width:130px;background:#fcfcfb;border:1px solid #e4e3df;border-radius:8px;padding:10px 12px;'>"
+        & "<div style='font-size:17.5px;color:#52514e;'>{L}</div>"
+        & "<div style='font-size:37.5px;font-weight:600;color:#0b0b0b;line-height:1.25;'>{V}</div>"
+        & "<div style='font-size:16px;color:{C};'>{S}</div></div>"
+VAR _varTxt = IF ( ISBLANK ( _var ), "Sin año anterior", IF ( _var < 0, "▼ ", "▲ +" ) & FORMAT ( ABS ( _var ), "0%" ) & " vs " & ( _anio - 1 ) )
+VAR _varCol = IF ( ISBLANK ( _var ), "#52514e", IF ( _var < 0, "#006300", "#b02a2a" ) )
+VAR _letTxt = FORMAT ( _fall, "#,0" ) & " muertes" & IF ( ISBLANK ( _letAA ), "", IF ( _dLet >= 0, " · ▲ +", " · ▼ " ) & FORMAT ( ABS ( _dLet ), "0.00" ) & " pp vs " & ( _anio - 1 ) )
+VAR _letCol = IF ( ISBLANK ( _letAA ), "#52514e", IF ( _dLet > 0, "#b02a2a", "#006300" ) )
+VAR _k1 = SUBSTITUTE ( SUBSTITUTE ( SUBSTITUTE ( SUBSTITUTE ( _t, "{L}", "Casos notificados" ), "{V}", FORMAT ( _casos, "#,0" ) ), "{S}", _varTxt ), "{C}", _varCol )
+VAR _k2 = SUBSTITUTE ( SUBSTITUTE ( SUBSTITUTE ( SUBSTITUTE ( _t, "{L}", "Incidencia" ), "{V}", FORMAT ( _inc, "#,0.0" ) ), "{S}", "casos por 100.000 hab." ), "{C}", "#52514e" )
+VAR _k3 = SUBSTITUTE ( SUBSTITUTE ( SUBSTITUTE ( SUBSTITUTE ( _t, "{L}", "Dengue grave" ), "{V}", FORMAT ( _gr, "0.00%" ) ), "{S}", "Hospitalizados: " & FORMAT ( _hosp, "0.0%" ) ), "{C}", "#52514e" )
+VAR _k4 = SUBSTITUTE ( SUBSTITUTE ( SUBSTITUTE ( SUBSTITUTE ( _t, "{L}", "Letalidad" ), "{V}", FORMAT ( _let, "0.00%" ) ), "{S}", _letTxt ), "{C}", _letCol )
+VAR _zc = SWITCH ( _zona, "Epidemia", "#d03b3b", "Alerta", "#ec835a", "Seguridad", "#fab219", "Éxito", "#0ca30c", "#9e9d98" )
+VAR _zi = SWITCH ( _zona, "Epidemia", "⚠", "Alerta", "▲", "Seguridad", "●", "Éxito", "✓", "–" )
+VAR _k5 =
+    "<div style='flex:1;min-width:150px;background:#fcfcfb;border:1px solid #e4e3df;border-left:6px solid " & _zc & ";border-radius:8px;padding:10px 12px;'>"
+        & "<div style='font-size:17.5px;color:#52514e;'>Canal endémico · semana " & _sem & "</div>"
+        & "<div style='font-size:32px;font-weight:600;line-height:1.35;'>" & _zi & " " & COALESCE ( _zona, "Sin dato" ) & "</div>"
+        & "<div style='font-size:16px;color:#52514e;'>frente al rango histórico esperado</div></div>"
+RETURN
+    "<div style='font-family:Segoe UI,sans-serif;color:#0b0b0b;display:flex;gap:10px;flex-wrap:wrap;'>" & _k1 & _k2 & _k3 & _k4 & _k5 & "</div>"
+
+// Página 1 · Resumen ejecutivo (panel de lectura)
+HTML P1 Resumen =
+VAR _anio = [Año Seleccionado]
+VAR _tab =
+    FILTER (
+        ADDCOLUMNS ( VALUES ( dim_departamento[departamento] ),
+            "@c", [Casos], "@ca", [Casos Año Anterior], "@v", [Var % vs Año Anterior] ),
+        [@ca] >= 100 && [@v] > 0 )
+VAR _n = COUNTROWS ( _tab )
+VAR _li = "<li style='margin:3px 0;font-size:18px;line-height:1.45;color:#0b0b0b;'>"
+VAR _lista =
+    CONCATENATEX ( TOPN ( 5, _tab, [@v], DESC ),
+        _li & "<b style='font-size:18px;'>" & dim_departamento[departamento] & "</b> ▲ +" & FORMAT ( [@v], "0%" )
+            & " <span style='color:#52514e;font-size:16px;'>(" & FORMAT ( [@ca], "#,0" ) & " → " & FORMAT ( [@c], "#,0" ) & " casos)</span></li>",
+        "", [@v], DESC )
+RETURN
+    "<div style='font-family:Segoe UI,sans-serif;color:#0b0b0b;font-size:19px;line-height:1.5;'>"
+        & "<div style='font-size:21px;font-weight:600;margin-bottom:4px;'>Lectura del periodo</div>"
+        & "<div style='font-size:19px;line-height:1.5;'>" & [Narrativa Resumen] & "</div>"
+        & IF ( _n > 0,
+            "<div style='margin-top:10px;font-size:19px;font-weight:600;'>" & _n & IF ( _n = 1, " departamento creció", " departamentos crecieron" )
+                & " frente a " & ( _anio - 1 ) & "</div>"
+                & "<ul style='margin:4px 0 0 22px;padding:0;font-size:18px;'>" & _lista & "</ul>",
+            "" )
+        & "</div>"
+
+// Página 2 · Geografía (ranking de riesgo)
+HTML P2 Incidencia Departamentos =
+VAR _nal = CALCULATE ( [Incidencia x100k], REMOVEFILTERS ( dim_departamento ), REMOVEFILTERS ( dim_municipio ) )
+VAR _tab = FILTER ( ADDCOLUMNS ( VALUES ( dim_departamento[departamento] ), "@i", [Incidencia x100k], "@c", [Casos] ), [@i] > 0 )
+VAR _top = TOPN ( 10, _tab, [@i], DESC )
+VAR _max = MAXX ( _top, [@i] )
+VAR _filas =
+    CONCATENATEX ( _top,
+        "<tr><td style='padding:3px 8px 3px 0;white-space:nowrap;'>" & dim_departamento[departamento] & "</td>"
+            & "<td style='width:50%;padding:3px 0;'><div style='background:#2a78d6;height:12px;border-radius:0 4px 4px 0;width:"
+            & FORMAT ( DIVIDE ( [@i], _max ) * 100, "0" ) & "%;'></div></td>"
+            & "<td style='padding:3px 0 3px 8px;text-align:right;font-weight:600;'>" & FORMAT ( [@i], "#,0" ) & "</td>"
+            & "<td style='padding:3px 0 3px 8px;text-align:right;color:#52514e;white-space:nowrap;'>" & FORMAT ( DIVIDE ( [@i], _nal ), "0.0" ) & "× nal.</td></tr>",
+        "", [@i], DESC )
+RETURN
+    "<div style='font-family:Segoe UI,sans-serif;color:#0b0b0b;font-size:18px;'>"
+        & "<div style='font-size:20px;font-weight:600;'>Mayor riesgo por habitante</div>"
+        & "<div style='color:#52514e;margin-bottom:6px;'>Casos por 100.000 hab. y veces el promedio nacional ("
+        & FORMAT ( _nal, "#,0.0" ) & ")</div>"
+        & "<table style='width:100%;border-collapse:collapse;'>" & _filas & "</table></div>"
+
+// Página 2 · Geografía (dónde está la carga)
+HTML P2 Concentracion Municipios =
+VAR _tot = [Casos]
+VAR _tab =
+    ADDCOLUMNS ( VALUES ( dim_municipio[cod_mpio] ),
+        "@m", CALCULATE ( MAX ( dim_municipio[municipio] ) ),
+        "@d", CALCULATE ( MAX ( dim_municipio[departamento] ) ),
+        "@c", [Casos] )
+VAR _top = TOPN ( 10, FILTER ( _tab, [@c] > 0 ), [@c], DESC )
+VAR _sh = DIVIDE ( SUMX ( _top, [@c] ), _tot )
+VAR _max = MAXX ( _top, [@c] )
+VAR _filas =
+    CONCATENATEX ( _top,
+        "<tr><td style='padding:3px 8px 3px 0;white-space:nowrap;'>" & [@m]
+            & " <span style='color:#52514e;font-size:15.5px;'>" & [@d] & "</span></td>"
+            & "<td style='width:42%;padding:3px 0;'><div style='background:#eb6834;height:12px;border-radius:0 4px 4px 0;width:"
+            & FORMAT ( DIVIDE ( [@c], _max ) * 100, "0" ) & "%;'></div></td>"
+            & "<td style='padding:3px 0 3px 8px;text-align:right;font-weight:600;'>" & FORMAT ( [@c], "#,0" ) & "</td>"
+            & "<td style='padding:3px 0 3px 8px;text-align:right;color:#52514e;'>" & FORMAT ( DIVIDE ( [@c], _tot ), "0.0%" ) & "</td></tr>",
+        "", [@c], DESC )
+RETURN
+    "<div style='font-family:Segoe UI,sans-serif;color:#0b0b0b;font-size:18px;'>"
+        & "<div style='font-size:20px;font-weight:600;'>Los 10 municipios con más casos suman el " & FORMAT ( _sh, "0.0%" ) & "</div>"
+        & "<div style='color:#52514e;margin-bottom:6px;'>Casos notificados y participación en el total del filtro</div>"
+        & "<table style='width:100%;border-collapse:collapse;'>" & _filas & "</table></div>"
+
+// Página 3 · Temporalidad (resumen del canal)
+HTML P3 Estado Canal =
+VAR _sem = VALUES ( dim_tiempo[id_semana] )
+VAR _e = COUNTROWS ( FILTER ( _sem, [Zona Canal] = "Éxito" ) ) + 0
+VAR _s = COUNTROWS ( FILTER ( _sem, [Zona Canal] = "Seguridad" ) ) + 0
+VAR _a = COUNTROWS ( FILTER ( _sem, [Zona Canal] = "Alerta" ) ) + 0
+VAR _p = COUNTROWS ( FILTER ( _sem, [Zona Canal] = "Epidemia" ) ) + 0
+VAR _zona = [Zona Última Semana]
+VAR _ten = [Tendencia 4 Semanas %]
+VAR _t =
+    "<div style='flex:1;min-width:95px;border:1px solid #e4e3df;border-radius:8px;padding:8px 10px;background:#fcfcfb;'>"
+        & "<div style='font-size:17.5px;color:#52514e;'><span style='display:inline-block;width:10px;height:10px;border-radius:2px;background:{C};margin-right:6px;'></span>{I} {L}</div>"
+        & "<div style='font-size:34.5px;font-weight:600;'>{N}</div><div style='font-size:15.5px;color:#52514e;'>semanas</div></div>"
+VAR _c1 = SUBSTITUTE ( SUBSTITUTE ( SUBSTITUTE ( SUBSTITUTE ( _t, "{C}", "#0ca30c" ), "{I}", "✓" ), "{L}", "Éxito" ), "{N}", _e )
+VAR _c2 = SUBSTITUTE ( SUBSTITUTE ( SUBSTITUTE ( SUBSTITUTE ( _t, "{C}", "#fab219" ), "{I}", "●" ), "{L}", "Seguridad" ), "{N}", _s )
+VAR _c3 = SUBSTITUTE ( SUBSTITUTE ( SUBSTITUTE ( SUBSTITUTE ( _t, "{C}", "#ec835a" ), "{I}", "▲" ), "{L}", "Alerta" ), "{N}", _a )
+VAR _c4 = SUBSTITUTE ( SUBSTITUTE ( SUBSTITUTE ( SUBSTITUTE ( _t, "{C}", "#d03b3b" ), "{I}", "⚠" ), "{L}", "Epidemia" ), "{N}", _p )
+RETURN
+    "<div style='font-family:Segoe UI,sans-serif;color:#0b0b0b;font-size:18px;'>"
+        & "<div style='font-size:20px;font-weight:600;margin-bottom:6px;'>" & ( _a + _p ) & " semanas en alerta o epidemia</div>"
+        & "<div style='display:flex;gap:8px;flex-wrap:wrap;'>" & _c1 & _c2 & _c3 & _c4 & "</div>"
+        & "<div style='margin-top:8px;color:#52514e;'>Última semana con datos: <b style='color:#0b0b0b;'>" & COALESCE ( _zona, "sin dato" ) & "</b>"
+        & " &nbsp;·&nbsp; Tendencia últimas 4 semanas: <b style='color:#0b0b0b;'>"
+        & IF ( ISBLANK ( _ten ), "sin dato", IF ( _ten >= 0, "▲ +", "▼ " ) & FORMAT ( ABS ( _ten ), "0.0%" ) ) & "</b></div>"
+        & "<div style='margin-top:4px;color:#52514e;font-size:16px;'>Zonas según los cuartiles de los casos semanales de 2019 y 2022-2024.</div>"
+        & "</div>"
+
+// Página 3 · Temporalidad (semáforo semana a semana)
+HTML P3 Semaforo Semanal =
+VAR _sem =
+    FILTER (
+        ADDCOLUMNS ( VALUES ( dim_tiempo[id_semana] ), "@z", [Zona Canal], "@c", [Casos] ),
+        NOT ISBLANK ( [@z] ) )
+VAR _cel =
+    CONCATENATEX ( _sem,
+        "<div title='Semana " & MOD ( dim_tiempo[id_semana], 100 ) & " de " & INT ( dim_tiempo[id_semana] / 100 ) & ": " & [@z]
+            & " (" & FORMAT ( [@c], "#,0" ) & " casos)' style='width:14px;height:24px;border-radius:3px;background:"
+            & SWITCH ( [@z], "Epidemia", "#d03b3b", "Alerta", "#ec835a", "Seguridad", "#fab219", "#0ca30c" ) & ";'></div>",
+        "", dim_tiempo[id_semana], ASC )
+VAR _ley =
+    "<span style='margin-right:12px;'><span style='display:inline-block;width:10px;height:10px;border-radius:2px;background:#0ca30c;margin-right:4px;'></span>✓ Éxito</span>"
+        & "<span style='margin-right:12px;'><span style='display:inline-block;width:10px;height:10px;border-radius:2px;background:#fab219;margin-right:4px;'></span>● Seguridad</span>"
+        & "<span style='margin-right:12px;'><span style='display:inline-block;width:10px;height:10px;border-radius:2px;background:#ec835a;margin-right:4px;'></span>▲ Alerta</span>"
+        & "<span><span style='display:inline-block;width:10px;height:10px;border-radius:2px;background:#d03b3b;margin-right:4px;'></span>⚠ Epidemia</span>"
+RETURN
+    "<div style='font-family:Segoe UI,sans-serif;color:#0b0b0b;font-size:17.5px;'>"
+        & "<div style='font-size:20px;font-weight:600;'>Semana a semana frente a lo esperado</div>"
+        & "<div style='color:#52514e;margin-bottom:6px;'>Cada barra es una semana epidemiológica; pase el cursor para ver el detalle.</div>"
+        & "<div style='display:flex;flex-wrap:wrap;gap:2px;'>" & _cel & "</div>"
+        & "<div style='margin-top:8px;color:#52514e;'>" & _ley & "</div></div>"
+
+// Página 4 · Clima (hallazgo principal)
+HTML P4 Clima =
+VAR _rho = [Correlación Temperatura-Casos entre Años]
+VAR _pct = [% Municipios Temperatura Positiva]
+VAR _maxc = MAXX ( ALL ( clima_anual ), clima_anual[casos] )
+VAR _barras =
+    CONCATENATEX ( ALL ( clima_anual ),
+        VAR _a = clima_anual[anom_temp_c]
+        VAR _col = SWITCH ( TRUE (), _a <= -0.3, "#2a78d6", _a < 0, "#86b6ef", _a < 0.3, "#f0a8a3", "#d03b3b" )
+        RETURN
+            "<div style='flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;'>"
+                & "<div style='font-size:16px;font-weight:600;'>" & FORMAT ( clima_anual[casos], "#,0" ) & "</div>"
+                & "<div style='width:70%;height:" & FORMAT ( DIVIDE ( clima_anual[casos], _maxc ) * 110, "0" ) & "px;background:" & _col & ";border-radius:4px 4px 0 0;'></div>"
+                & "<div style='font-size:17.5px;margin-top:3px;'>" & clima_anual[anio] & "</div>"
+                & "<div style='font-size:16px;color:#52514e;'>" & FORMAT ( _a, "+0.00;-0.00;0.00" ) & " °C</div></div>",
+        "", clima_anual[anio], ASC )
+VAR _rt = FILTER ( ALL ( rezago_clima ), rezago_clima[variable] = "precip_mm" )
+VAR _rmax = MAXX ( _rt, rezago_clima[corr_mediana] )
+VAR _k = [Rezago Óptimo Precipitación]
+VAR _rk = [Correlación Máxima Precipitación]
+VAR _pk = MAXX ( FILTER ( _rt, rezago_clima[rezago_semanas] = _k ), rezago_clima[pct_municipios_positivos] ) / 100
+VAR _lag =
+    CONCATENATEX ( _rt,
+        "<div style='flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;'>"
+            & "<div style='width:70%;height:" & FORMAT ( MAX ( 0, DIVIDE ( rezago_clima[corr_mediana], _rmax ) ) * 70, "0" ) & "px;background:"
+            & IF ( rezago_clima[rezago_semanas] = _k, "#2a78d6", "#b7d3f6" ) & ";border-radius:3px 3px 0 0;'></div>"
+            & "<div style='font-size:15px;color:#52514e;'>" & rezago_clima[rezago_semanas] & "</div></div>",
+        "", rezago_clima[rezago_semanas], ASC )
+VAR _card = "flex:1;min-width:240px;border:1px solid #e4e3df;border-radius:8px;padding:10px 12px;background:#fcfcfb;"
+RETURN
+    "<div style='font-family:Segoe UI,sans-serif;color:#0b0b0b;font-size:18px;display:flex;gap:12px;flex-wrap:wrap;'>"
+        & "<div style='" & _card & "'>"
+            & "<div style='font-size:20px;font-weight:600;'>Entre años: el calor define el tamaño de la temporada</div>"
+            & "<div style='color:#52514e;margin:2px 0 8px;'>Correlación " & FORMAT ( _rho, "0.00" ) & ", positiva en "
+            & FORMAT ( _pct, "0%" ) & " de los municipios con clima</div>"
+            & "<div style='display:flex;align-items:flex-end;height:200px;gap:6px;'>" & _barras & "</div>"
+            & "<div style='font-size:15.5px;color:#52514e;margin-top:6px;'>Color: anomalía de temperatura del año (azul = más frío, rojo = más cálido).</div></div>"
+        & "<div style='" & _card & "'>"
+            & "<div style='font-size:20px;font-weight:600;'>Dentro del año: la lluvia antecede los casos</div>"
+            & "<div style='color:#52514e;margin:2px 0 8px;'>Máximo a <b style='color:#0b0b0b;'>" & _k & " semanas</b> (correlación "
+            & FORMAT ( _rk, "0.00" ) & ", positiva en " & FORMAT ( _pk, "0%" ) & " de los municipios)</div>"
+            & "<div style='display:flex;align-items:flex-end;height:100px;gap:3px;'>" & _lag & "</div>"
+            & "<div style='font-size:15.5px;color:#52514e;margin-top:4px;'>Semanas de rezago entre la lluvia y los casos. Efecto débil: apoya la planeación, no fecha intervenciones por sí solo.</div></div>"
+        & "</div>"
+
+// Página 5 · Tiempo real (alerta climática)
+HTML P5 Alerta Climatica =
+VAR _corte = [Fecha Corte Pronóstico]
+VAR _fecha = IF ( ISBLANK ( _corte ), "sin dato", RIGHT ( _corte, 2 ) & "/" & MID ( _corte, 6, 2 ) & "/" & LEFT ( _corte, 4 ) )
+VAR _n = [Municipios con Señal Alta]
+VAR _tot = COUNTROWS ( fact_senal_clima )
+VAR _tab =
+    FILTER (
+        ADDCOLUMNS ( VALUES ( dim_municipio[cod_mpio] ),
+            "@m", CALCULATE ( MAX ( dim_municipio[municipio] ) ),
+            "@d", CALCULATE ( MAX ( dim_municipio[departamento] ) ),
+            "@s", [Señal Climática],
+            "@lr", [Anomalía Lluvia Reciente %],
+            "@tr", [Anomalía Temperatura Reciente °C],
+            "@lp", [Anomalía Lluvia Pronosticada %] ),
+        NOT ISBLANK ( [@s] ) )
+VAR _th = "padding:4px 6px;text-align:right;color:#52514e;font-weight:400;border-bottom:1px solid #e4e3df;"
+VAR _td = "padding:4px 6px;text-align:right;border-bottom:1px solid #f0efec;"
+VAR _filas =
+    CONCATENATEX ( TOPN ( 8, _tab, [@s], DESC ),
+        VAR _niv = SWITCH ( TRUE (), [@s] >= 0.5, "▲ Alta", [@s] >= 0, "● Media", "▼ Baja" )
+        VAR _bg = SWITCH ( TRUE (), [@s] >= 0.5, "#fde7d8", [@s] >= 0, "#f0efec", "#e8f1fc" )
+        RETURN
+            "<tr><td style='padding:4px 6px 4px 0;border-bottom:1px solid #f0efec;'>" & [@m] & " <span style='color:#52514e;font-size:15.5px;'>" & [@d] & "</span></td>"
+                & "<td style='" & _td & "'><span style='background:" & _bg & ";border-radius:10px;padding:1px 8px;white-space:nowrap;'>" & _niv & " " & FORMAT ( [@s], "0.00" ) & "</span></td>"
+                & "<td style='" & _td & "'>" & FORMAT ( [@lr], "+0%;-0%;0%" ) & "</td>"
+                & "<td style='" & _td & "'>" & FORMAT ( [@tr], "+0.0;-0.0;0.0" ) & " °C</td>"
+                & "<td style='" & _td & "'>" & FORMAT ( [@lp], "+0%;-0%;0%" ) & "</td></tr>",
+        "", [@s], DESC )
+RETURN
+    "<div style='font-family:Segoe UI,sans-serif;color:#0b0b0b;font-size:18px;'>"
+        & "<div style='font-size:20px;font-weight:600;'>" & _n & " de " & _tot & " municipios con señal climática alta</div>"
+        & "<div style='color:#52514e;margin-bottom:6px;'>Pronóstico Open-Meteo consultado el " & _fecha
+        & ". Anomalías frente al promedio 2022-2025 de las mismas semanas.</div>"
+        & "<table style='width:100%;border-collapse:collapse;'><tr>"
+        & "<th style='" & _th & "text-align:left;'>Municipio</th><th style='" & _th & "'>Señal</th>"
+        & "<th style='" & _th & "'>Lluvia 8 sem.</th><th style='" & _th & "'>Temp. 8 sem.</th><th style='" & _th & "'>Lluvia pronosticada</th></tr>"
+        & _filas & "</table></div>"
+
+// Página 6 · Recomendación (ranking del índice)
+HTML P6 Ranking Priorizacion =
+VAR _tab =
+    FILTER (
+        ADDCOLUMNS ( VALUES ( dim_departamento[departamento] ),
+            "@ip", [Índice de Priorización],
+            "@rk", [Ranking Priorización],
+            "@p", CALCULATE ( MAX ( dep_priorizacion[prioridad] ) ),
+            "@inc", CALCULATE ( MAX ( dep_priorizacion[incidencia_100k] ) ),
+            "@let", CALCULATE ( MAX ( dep_priorizacion[letalidad_suav_pct] ) ) / 100,
+            "@ten", CALCULATE ( MAX ( dep_priorizacion[tendencia_4s_pct] ) ) / 100,
+            "@f",
+        VAR _fi = 0.25 * CALCULATE ( MAX ( dep_priorizacion[n_incidencia] ) )
+        VAR _fc = 0.15 * CALCULATE ( MAX ( dep_priorizacion[n_carga] ) )
+        VAR _fg = 0.15 * CALCULATE ( MAX ( dep_priorizacion[n_pct_grave] ) )
+        VAR _fl = 0.20 * CALCULATE ( MAX ( dep_priorizacion[n_letalidad] ) )
+        VAR _ft = 0.15 * CALCULATE ( MAX ( dep_priorizacion[n_tendencia_4s] ) )
+        VAR _fs = 0.10 * CALCULATE ( MAX ( dep_priorizacion[n_senal_clima] ) )
+        VAR _fm = MAX ( MAX ( MAX ( _fi, _fc ), MAX ( _fg, _fl ) ), MAX ( _ft, _fs ) )
+        RETURN SWITCH ( _fm, _fi, "Incidencia", _fc, "Carga de casos", _fl, "Letalidad", _fg, "% grave", _ft, "Tendencia", _fs, "Clima", "" ) ),
+        NOT ISBLANK ( [@ip] ) )
+VAR _th = "padding:4px 6px;color:#52514e;font-weight:400;border-bottom:1px solid #e4e3df;text-align:right;"
+VAR _td = "padding:4px 6px;border-bottom:1px solid #f0efec;text-align:right;"
+VAR _filas =
+    CONCATENATEX ( TOPN ( 10, _tab, [@ip], DESC ),
+        VAR _col = SWITCH ( [@p], "Alta", "#104281", "Media", "#2a78d6", "#86b6ef" )
+        RETURN
+            "<tr><td style='" & _td & "color:#52514e;'>" & [@rk] & "</td>"
+                & "<td style='padding:4px 6px;border-bottom:1px solid #f0efec;white-space:nowrap;'>" & dim_departamento[departamento] & "</td>"
+                & "<td style='padding:4px 6px;border-bottom:1px solid #f0efec;width:22%;'><div style='background:" & _col
+                & ";height:12px;border-radius:0 4px 4px 0;width:" & FORMAT ( [@ip], "0" ) & "%;'></div></td>"
+                & "<td style='" & _td & "font-weight:600;'>" & FORMAT ( [@ip], "0.0" ) & "</td>"
+                & "<td style='" & _td & "'><span style='border:1px solid " & _col & ";color:" & _col & ";border-radius:10px;padding:0 7px;'>" & [@p] & "</span></td>"
+                & "<td style='padding:4px 6px;border-bottom:1px solid #f0efec;'>" & [@f] & "</td>"
+                & "<td style='" & _td & "'>" & FORMAT ( [@inc], "#,0" ) & "</td>"
+                & "<td style='" & _td & "'>" & FORMAT ( [@let], "0.00%" ) & "</td>"
+                & "<td style='" & _td & "'>" & FORMAT ( [@ten], "+0%;-0%;0%" ) & "</td></tr>",
+        "", [@ip], DESC )
+RETURN
+    "<div style='font-family:Segoe UI,sans-serif;color:#0b0b0b;font-size:17.5px;'>"
+        & "<div style='font-size:20px;font-weight:600;'>" & [Departamentos Prioridad Alta] & " departamentos en prioridad alta (2025)</div>"
+        & "<div style='color:#52514e;margin-bottom:6px;'>Índice 0-100: incidencia 25 %, letalidad 20 %, carga 15 %, % grave 15 %, tendencia 15 %, clima 10 %.</div>"
+        & "<table style='width:100%;border-collapse:collapse;'><tr>"
+        & "<th style='" & _th & "'>#</th><th style='" & _th & "text-align:left;'>Departamento</th><th style='" & _th & "'></th>"
+        & "<th style='" & _th & "'>Índice</th><th style='" & _th & "'>Prioridad</th><th style='" & _th & "text-align:left;'>Factor principal</th>"
+        & "<th style='" & _th & "'>Incidencia</th><th style='" & _th & "'>Letalidad*</th><th style='" & _th & "'>Tend. 4 sem.</th></tr>"
+        & _filas & "</table>"
+        & "<div style='font-size:15.5px;color:#52514e;margin-top:4px;'>* Letalidad suavizada hacia la tasa nacional para departamentos con pocos casos.</div></div>"
+
+// Página 6 · Recomendación (acciones)
+HTML P6 Recomendaciones =
+VAR _dep =
+    FILTER (
+        ADDCOLUMNS ( VALUES ( dim_departamento[departamento] ),
+            "@p", CALCULATE ( MAX ( dep_priorizacion[prioridad] ) ),
+            "@ip", [Índice de Priorización],
+            "@f",
+        VAR _fi = 0.25 * CALCULATE ( MAX ( dep_priorizacion[n_incidencia] ) )
+        VAR _fc = 0.15 * CALCULATE ( MAX ( dep_priorizacion[n_carga] ) )
+        VAR _fg = 0.15 * CALCULATE ( MAX ( dep_priorizacion[n_pct_grave] ) )
+        VAR _fl = 0.20 * CALCULATE ( MAX ( dep_priorizacion[n_letalidad] ) )
+        VAR _ft = 0.15 * CALCULATE ( MAX ( dep_priorizacion[n_tendencia_4s] ) )
+        VAR _fs = 0.10 * CALCULATE ( MAX ( dep_priorizacion[n_senal_clima] ) )
+        VAR _fm = MAX ( MAX ( MAX ( _fi, _fc ), MAX ( _fg, _fl ) ), MAX ( _ft, _fs ) )
+        RETURN SWITCH ( _fm, _fi, "Incidencia", _fc, "Carga de casos", _fl, "Letalidad", _fg, "% grave", _ft, "Tendencia", _fs, "Clima", "" ) ),
+        [@p] = "Alta" )
+VAR _trans = CONCATENATEX ( FILTER ( _dep, [@f] IN { "Incidencia", "Carga de casos", "Tendencia" } ), dim_departamento[departamento], ", ", [@ip], DESC )
+VAR _sev = CONCATENATEX ( FILTER ( _dep, [@f] IN { "Letalidad", "% grave" } ), dim_departamento[departamento], ", ", [@ip], DESC )
+VAR _clima =
+    CONCATENATEX (
+        TOPN ( 5, FILTER ( ADDCOLUMNS ( VALUES ( dim_municipio[cod_mpio] ), "@m", CALCULATE ( MAX ( dim_municipio[municipio] ) ), "@s", [Señal Climática] ), [@s] >= 0.5 ), [@s], DESC ),
+        [@m], ", ", [@s], DESC )
+VAR _card =
+    "<div style='flex:1;min-width:210px;border:1px solid #e4e3df;border-left:4px solid {C};border-radius:8px;padding:10px 12px;background:#fcfcfb;'>"
+        & "<div style='font-size:17.5px;color:#52514e;'>{N}</div>"
+        & "<div style='font-size:20px;font-weight:600;margin:2px 0 6px;'>{T}</div>"
+        & "<div><b>Dónde:</b> {D}</div>"
+        & "<div style='margin-top:4px;color:#52514e;'><b style='color:#0b0b0b;'>Seguimiento:</b> {I}</div></div>"
+VAR _r1 = SUBSTITUTE ( SUBSTITUTE ( SUBSTITUTE ( SUBSTITUTE ( SUBSTITUTE ( _card, "{C}", "#104281" ), "{N}", "Acción 1 · Transmisión" ),
+            "{T}", "Control vectorial intensivo y búsqueda activa" ), "{D}", COALESCE ( _trans, "sin departamentos en este perfil" ) ),
+            "{I}", "incidencia semanal y zona del canal endémico" )
+VAR _r2 = SUBSTITUTE ( SUBSTITUTE ( SUBSTITUTE ( SUBSTITUTE ( SUBSTITUTE ( _card, "{C}", "#eb6834" ), "{N}", "Acción 2 · Severidad" ),
+            "{T}", "Auditoría de muertes y manejo clínico del dengue grave, con énfasis pediátrico" ), "{D}", COALESCE ( _sev, "sin departamentos en este perfil" ) ),
+            "{I}", "letalidad y % de hospitalización" )
+VAR _r3 = SUBSTITUTE ( SUBSTITUTE ( SUBSTITUTE ( SUBSTITUTE ( SUBSTITUTE ( _card, "{C}", "#2a78d6" ), "{N}", "Acción 3 · Clima" ),
+            "{T}", "Alerta climática: preparar en fase cálida y controlar criaderos 3-6 semanas después de lluvias altas" ),
+            "{D}", COALESCE ( _clima, "ningún municipio con señal alta hoy" ) ), "{I}", "señal climática semanal con el pronóstico" )
+RETURN
+    "<div style='font-family:Segoe UI,sans-serif;color:#0b0b0b;font-size:18px;display:flex;gap:10px;flex-wrap:wrap;line-height:1.45;'>" & _r1 & _r2 & _r3 & "</div>"
+
+// Página 6 · Recomendación (contraste con el INS)
+HTML P6 Boletines INS =
+VAR _tab =
+    FILTER (
+        ADDCOLUMNS ( VALUES ( dim_departamento[departamento] ),
+            "@m", [Menciones de Alerta en Boletines],
+            "@rk", [Ranking Priorización],
+            "@p", CALCULATE ( MAX ( dep_priorizacion[prioridad] ) ) ),
+        [@m] > 0 )
+VAR _filas =
+    CONCATENATEX ( TOPN ( 6, _tab, [@m], DESC, [@rk], ASC ),
+        "<tr><td style='padding:3px 6px 3px 0;'>" & dim_departamento[departamento] & "</td>"
+            & "<td style='padding:3px 6px;text-align:right;font-weight:600;'>" & [@m] & "</td>"
+            & "<td style='padding:3px 6px;text-align:right;color:#52514e;'>#" & [@rk] & " · " & [@p] & "</td>"
+            & "<td style='padding:3px 0 3px 6px;'>" & IF ( [@p] = "Alta", "✓ coincide", "– revisar" ) & "</td></tr>",
+        "", [@m], DESC, [@rk], ASC )
+RETURN
+    "<div style='font-family:Segoe UI,sans-serif;color:#0b0b0b;font-size:18px;'>"
+        & "<div style='font-size:20px;font-weight:600;'>Lo que dice el INS</div>"
+        & "<div style='color:#52514e;margin-bottom:6px;'>Menciones en oraciones de alerta de los boletines analizados, frente al ranking del índice</div>"
+        & "<table style='width:100%;border-collapse:collapse;'>" & _filas & "</table></div>"
+
+// Página oculta · Calidad de datos y metodología
+HTML Calidad Datos =
+VAR _filas =
+    CONCATENATEX ( calidad_datos,
+        "<tr><td style='padding:3px 6px 3px 0;color:#52514e;border-bottom:1px solid #f0efec;'>" & calidad_datos[fuente] & "</td>"
+            & "<td style='padding:3px 6px;border-bottom:1px solid #f0efec;'>" & calidad_datos[regla] & "</td>"
+            & "<td style='padding:3px 6px;text-align:right;border-bottom:1px solid #f0efec;'>" & FORMAT ( calidad_datos[registros_antes], "#,0" ) & "</td>"
+            & "<td style='padding:3px 6px;text-align:right;border-bottom:1px solid #f0efec;'>" & FORMAT ( calidad_datos[registros_despues], "#,0" ) & "</td>"
+            & "<td style='padding:3px 0 3px 6px;text-align:right;font-weight:600;border-bottom:1px solid #f0efec;'>"
+            & IF ( calidad_datos[eliminados] > 0, FORMAT ( calidad_datos[eliminados], "#,0" ),
+                 IF ( calidad_datos[afectados] > 0, FORMAT ( calidad_datos[afectados], "#,0" ) & " ajustados", "0" ) ) & "</td></tr>",
+        "", calidad_datos[fuente], ASC, calidad_datos[registros_antes], DESC )
+VAR _th = "padding:4px 6px;color:#52514e;font-weight:400;border-bottom:1px solid #e4e3df;"
+RETURN
+    "<div style='font-family:Segoe UI,sans-serif;color:#0b0b0b;font-size:17.5px;'>"
+        & "<div style='font-size:20px;font-weight:600;'>Bitácora de calidad de datos</div>"
+        & "<div style='color:#52514e;margin-bottom:6px;'>Reglas aplicadas en el pipeline Python y registros afectados</div>"
+        & "<table style='width:100%;border-collapse:collapse;'><tr><th style='" & _th & "text-align:left;'>Fuente</th>"
+        & "<th style='" & _th & "text-align:left;'>Regla</th><th style='" & _th & "text-align:right;'>Antes</th>"
+        & "<th style='" & _th & "text-align:right;'>Después</th><th style='" & _th & "text-align:right;'>Eliminados</th></tr>"
+        & _filas & "</table></div>"
+

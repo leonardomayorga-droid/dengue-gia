@@ -1,0 +1,16 @@
+fuente,regla,registros_antes,registros_despues,eliminados,afectados
+SIVIGILA,Registros cargados,883075,883075,0,
+SIVIGILA,R2 Evento/año fuera de alcance,883075,883075,0,
+SIVIGILA,R3 Semana epidemiológica inválida,883075,883075,0,
+SIVIGILA,R4 Casos descartados / error de digitación,883075,883075,0,
+SIVIGILA,R5 Ocurrencia fuera de Colombia,883075,880734,2341,
+SIVIGILA,R6 Departamento de ocurrencia inválido,880734,880728,6,
+SIVIGILA,R7 Muertes en 210/220 ya contadas en el evento 580 (no se suman),880728,880728,0,86.0
+SIVIGILA,Registros limpios,883075,880728,2347,
+DIVIPOLA,Municipios únicos,1122,1122,0,
+DIVIPOLA,Coordenadas fuera de Colombia anuladas (se conserva el municipio),1122,1122,0,0.0
+DANE,Filtro área geográfica = Total,2941,1089,1852,
+DANE,Años fuera de alcance / total nacional,1089,264,825,
+Open-Meteo,Días de la semana epidemiológica del año anterior,69840,69800,40,
+Open-Meteo,Días sin dato,69800,69800,0,
+Modelo,Municipios agregados a la dimensión por integridad (24),1122,1146,-24,

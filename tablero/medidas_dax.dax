@@ -1,0 +1,246 @@
+// =============================================================================
+// MEDIDAS DAX — Tablero "Vigilancia y priorización del dengue en Colombia"
+// Global Insights Analytics · Caso Salud
+// Crear una tabla vacía "_Medidas" (Inicio > Escribir datos) y pegar cada medida.
+// Carpetas sugeridas entre corchetes en el comentario de cada bloque.
+// =============================================================================
+
+// ---------- [01 Carga] -------------------------------------------------------
+Casos = SUM ( fact_dengue[casos] )
+
+Casos Dengue Grave =
+CALCULATE ( [Casos], dim_evento[cod_eve] = 220 )
+
+% Dengue Grave = DIVIDE ( [Casos Dengue Grave], [Casos] )
+
+Casos Confirmados = SUM ( fact_dengue[confirmados] )
+
+% Confirmación = DIVIDE ( [Casos Confirmados], [Casos] )
+
+Hospitalizados = SUM ( fact_dengue[hospitalizados] )
+
+% Hospitalización = DIVIDE ( [Hospitalizados], [Casos] )
+
+Fallecidos = SUM ( fact_dengue[fallecidos] )
+
+// Fallecidos = muertes por dengue CONFIRMADAS (evento 580). Las filas del evento 580 tienen casos = 0,
+// así que no inflan los casos. Ojo: si el segmentador de Evento deja solo 210 o 220, las muertes
+// (evento 580) quedan fuera; para letalidad use la medida siguiente, que ignora ese filtro.
+Fallecidos en Estudio = SUM ( fact_dengue[fallecidos_en_estudio] )
+
+// Letalidad (%) = muertes confirmadas / casos de 210+220; formato: Porcentaje, 2 decimales
+Letalidad % =
+DIVIDE (
+    CALCULATE ( [Fallecidos], REMOVEFILTERS ( dim_evento ) ),
+    CALCULATE ( [Casos], REMOVEFILTERS ( dim_evento ) )
+)
+
+// ---------- [02 Población e incidencia] --------------------------------------
+// Persona-año: suma la población de cada año seleccionado.
+// fact_poblacion se relaciona con dim_departamento; el año se aplica con TREATAS.
+Población =
+SUMX (
+    VALUES ( dim_tiempo[anio] ),
+    CALCULATE (
+        SUM ( fact_poblacion[poblacion] ),
+        TREATAS ( { dim_tiempo[anio] }, fact_poblacion[anio] )
+    )
+)
+
+// La población es departamental: con un municipio seleccionado se oculta la tasa.
+Incidencia x100k =
+IF (
+    ISFILTERED ( dim_municipio[municipio] ),
+    BLANK (),
+    DIVIDE ( [Casos], [Población] ) * 100000
+)
+
+// ---------- [03 Comparación temporal] ----------------------------------------
+Año Seleccionado = MAX ( dim_tiempo[anio] )
+
+// Mismo periodo (mismas semanas) del año anterior
+Casos Año Anterior =
+VAR _anio = [Año Seleccionado]
+VAR _semanas = VALUES ( dim_tiempo[semana] )
+RETURN
+    CALCULATE (
+        [Casos],
+        REMOVEFILTERS ( dim_tiempo ),
+        dim_tiempo[anio] = _anio - 1,
+        TREATAS ( _semanas, dim_tiempo[semana] )
+    )
+
+Var % vs Año Anterior = DIVIDE ( [Casos] - [Casos Año Anterior], [Casos Año Anterior] )
+
+Última Semana con Datos =
+CALCULATE ( MAX ( fact_dengue[id_semana] ), REMOVEFILTERS ( dim_tiempo[semana] ) )
+
+Casos Últimas 4 Semanas =
+VAR _fin = [Última Semana con Datos]
+VAR _idxFin = CALCULATE ( MAX ( dim_tiempo[idx_semana] ), REMOVEFILTERS ( dim_tiempo ), dim_tiempo[id_semana] = _fin )
+RETURN
+    CALCULATE ( [Casos], REMOVEFILTERS ( dim_tiempo ),
+                dim_tiempo[idx_semana] > _idxFin - 4, dim_tiempo[idx_semana] <= _idxFin )
+
+Casos 4 Semanas Previas =
+VAR _fin = [Última Semana con Datos]
+VAR _idxFin = CALCULATE ( MAX ( dim_tiempo[idx_semana] ), REMOVEFILTERS ( dim_tiempo ), dim_tiempo[id_semana] = _fin )
+RETURN
+    CALCULATE ( [Casos], REMOVEFILTERS ( dim_tiempo ),
+                dim_tiempo[idx_semana] > _idxFin - 8, dim_tiempo[idx_semana] <= _idxFin - 4 )
+
+Tendencia 4 Semanas % = DIVIDE ( [Casos Últimas 4 Semanas] - [Casos 4 Semanas Previas], [Casos 4 Semanas Previas] )
+
+// ---------- [04 Canal endémico] ----------------------------------------------
+// Con un departamento o región filtrados se usa el canal departamental; si no, el nacional.
+Canal Q1 =
+IF (
+    ISFILTERED ( dim_departamento ),
+    CALCULATE ( SUM ( fact_canal_endemico[canal_q1] ), fact_canal_endemico[ambito] = "Departamental" ),
+    CALCULATE ( SUM ( fact_canal_endemico[canal_q1] ), fact_canal_endemico[ambito] = "Nacional" )
+)
+
+Canal Mediana =
+IF (
+    ISFILTERED ( dim_departamento ),
+    CALCULATE ( SUM ( fact_canal_endemico[canal_mediana] ), fact_canal_endemico[ambito] = "Departamental" ),
+    CALCULATE ( SUM ( fact_canal_endemico[canal_mediana] ), fact_canal_endemico[ambito] = "Nacional" )
+)
+
+Canal Q3 =
+IF (
+    ISFILTERED ( dim_departamento ),
+    CALCULATE ( SUM ( fact_canal_endemico[canal_q3] ), fact_canal_endemico[ambito] = "Departamental" ),
+    CALCULATE ( SUM ( fact_canal_endemico[canal_q3] ), fact_canal_endemico[ambito] = "Nacional" )
+)
+
+// Válida a nivel de semana (eje = dim_tiempo[semana] o [etiqueta])
+Zona Canal =
+VAR _c = [Casos]
+RETURN
+    SWITCH (
+        TRUE (),
+        ISBLANK ( [Canal Q3] ) || ISBLANK ( _c ), BLANK (),
+        _c > [Canal Q3], "Epidemia",
+        _c > [Canal Mediana], "Alerta",
+        _c > [Canal Q1], "Seguridad",
+        "Éxito"
+    )
+
+Semanas en Epidemia =
+COUNTROWS ( FILTER ( VALUES ( dim_tiempo[id_semana] ), [Zona Canal] = "Epidemia" ) )
+
+Semanas en Alerta o Epidemia =
+COUNTROWS ( FILTER ( VALUES ( dim_tiempo[id_semana] ), [Zona Canal] IN { "Alerta", "Epidemia" } ) )
+
+Zona Última Semana =
+CALCULATE ( [Zona Canal], dim_tiempo[id_semana] = [Última Semana con Datos] )
+
+// Color para formato condicional (valor del campo): estado + etiqueta, nunca solo color
+Color Zona =
+SWITCH ( [Zona Canal],
+    "Epidemia", "#d03b3b", "Alerta", "#ec835a", "Seguridad", "#fab219", "Éxito", "#0ca30c" )
+
+// ---------- [05 Clima] -------------------------------------------------------
+Precipitación Semanal mm = AVERAGE ( fact_clima_semana[precip_mm] )
+
+Temperatura Media °C = AVERAGE ( fact_clima_semana[temp_media_c] )
+
+Humedad Relativa % = DIVIDE ( AVERAGE ( fact_clima_semana[humedad_pct] ), 100 )
+
+// Requiere el parámetro What-if "Rezago" (Modelado > Nuevo parámetro > Numérico, 0 a 12, paso 1, valor 6)
+Precipitación Rezagada mm =
+VAR _k = SELECTEDVALUE ( Rezago[Rezago], 6 )
+VAR _idx = MAX ( dim_tiempo[idx_semana] )
+RETURN
+    CALCULATE (
+        [Precipitación Semanal mm],
+        REMOVEFILTERS ( dim_tiempo ),
+        dim_tiempo[idx_semana] = _idx - _k
+    )
+
+Rezago Óptimo Precipitación =
+VAR _t = FILTER ( rezago_clima, rezago_clima[variable] = "precip_mm" )
+VAR _max = MAXX ( _t, rezago_clima[corr_mediana] )
+RETURN MAXX ( FILTER ( _t, rezago_clima[corr_mediana] = _max ), rezago_clima[rezago_semanas] )
+
+Correlación Máxima Precipitación =
+MAXX ( FILTER ( rezago_clima, rezago_clima[variable] = "precip_mm" ), rezago_clima[corr_mediana] )
+
+// ---------- [06 Tiempo real: pronóstico] -------------------------------------
+Fecha Corte Pronóstico = MAX ( fact_pronostico[fecha_extraccion] )
+
+Precipitación Pronosticada 16d mm =
+AVERAGEX ( VALUES ( fact_pronostico[cod_mpio] ), CALCULATE ( SUM ( fact_pronostico[precip_mm] ) ) )
+
+Temperatura Pronosticada °C = AVERAGE ( fact_pronostico[temp_media_c] )
+
+Anomalía Lluvia Reciente % = DIVIDE ( AVERAGE ( fact_senal_clima[anom_precip_reciente_pct] ), 100 )
+
+Anomalía Lluvia Pronosticada % = DIVIDE ( AVERAGE ( fact_senal_clima[anom_precip_pron_pct] ), 100 )
+
+Anomalía Temperatura Pronosticada °C = AVERAGE ( fact_senal_clima[anom_temp_pron_c] )
+
+Señal Climática = AVERAGE ( fact_senal_clima[senal_clima] )
+
+Municipios con Señal Alta =
+COUNTROWS ( FILTER ( fact_senal_clima, fact_senal_clima[senal_clima] >= 0.5 ) )
+
+// ---------- [07 Priorización] ------------------------------------------------
+Índice de Priorización = AVERAGE ( dep_priorizacion[ip] )
+
+Ranking Priorización = MIN ( dep_priorizacion[ranking] )
+
+Departamentos Prioridad Alta =
+CALCULATE ( COUNTROWS ( dep_priorizacion ), dep_priorizacion[prioridad] = "Alta" )
+
+// ---------- [07b Boletines INS (minería de texto)] -------------------------
+Menciones de Alerta en Boletines = SUM ( fact_boletin_menciones[menciones_alerta] )
+
+Menciones de Dengue en Boletines = SUM ( fact_boletin_menciones[menciones_dengue] )
+
+// ---------- [08 Narrativa dinámica] ------------------------------------------
+// Tarjeta de texto (visual "Tarjeta (nueva)" o "Narrativa inteligente")
+Narrativa Resumen =
+VAR _ambito =
+    IF ( ISFILTERED ( dim_departamento[departamento] ),
+         SELECTEDVALUE ( dim_departamento[departamento], "los departamentos seleccionados" ),
+         "Colombia" )
+VAR _var = [Var % vs Año Anterior]
+RETURN
+    "En " & _ambito & " se notificaron " & FORMAT ( [Casos], "#,0" ) & " casos en " & [Año Seleccionado]
+        & " (" & FORMAT ( [Incidencia x100k], "#,0.0" ) & " por 100.000 hab.), "
+        & IF ( ISBLANK ( _var ), "",
+               IF ( _var >= 0, "un aumento de ", "una reducción de " ) & FORMAT ( ABS ( _var ), "0%" )
+               & " frente al mismo periodo del año anterior. " )
+        & FORMAT ( [% Dengue Grave], "0.0%" ) & " fueron dengue grave y la letalidad fue "
+        & FORMAT ( [Letalidad %], "0.00%" ) & "."
+
+// Tabla clima_anual (relación entre años; desconectada del modelo)
+Correlación Temperatura-Casos entre Años = MAX ( clima_anual[rho_temp_casos] )
+
+% Municipios Temperatura Positiva = DIVIDE ( MAX ( clima_anual[pct_municipios_positivos] ), 100 )
+
+Narrativa Clima =
+"Los años más cálidos tienen más dengue (correlación " & FORMAT ( [Correlación Temperatura-Casos entre Años], "0.00" )
+    & ", positiva en " & FORMAT ( [% Municipios Temperatura Positiva], "0%" ) & " de los municipios). "
+    & "Dentro de cada año, la lluvia antecede los casos unas " & [Rezago Óptimo Precipitación]
+    & " semanas (efecto débil: correlación mediana " & FORMAT ( [Correlación Máxima Precipitación], "0.00" )
+    & "). Pronóstico consultado el " & [Fecha Corte Pronóstico] & "."
+
+// Responden al segmentador "Rezago" (estilo Valor único)
+Correlación Rezago Seleccionado =
+VAR _k = SELECTEDVALUE ( Rezago[Rezago], 6 )
+RETURN
+    MAXX (
+        FILTER ( ALL ( rezago_clima ), rezago_clima[variable] = "precip_mm" && rezago_clima[rezago_semanas] = _k ),
+        rezago_clima[corr_mediana]
+    )
+
+Texto Rezago Seleccionado =
+VAR _k = SELECTEDVALUE ( Rezago[Rezago], 6 )
+VAR _r = [Correlación Rezago Seleccionado]
+VAR _opt = [Rezago Óptimo Precipitación]
+RETURN
+    "Rezago de " & _k & " semanas: correlación " & FORMAT ( _r, "0.00" )
+        & IF ( _k = _opt, " (el máximo)", " (el máximo es a " & _opt & " semanas)" )

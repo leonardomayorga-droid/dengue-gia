@@ -1,0 +1,34 @@
+cod_dpto,departamento,n_municipios,region,capital
+05,Antioquia,125,Andina,Medellín
+08,Atlántico,23,Caribe,Barranquilla
+11,Bogotá D.C.,1,Andina,"Bogotá, D.C."
+13,Bolívar,46,Caribe,Cartagena de Indias
+15,Boyacá,123,Andina,Tunja
+17,Caldas,27,Andina,Manizales
+18,Caquetá,16,Amazonía,Florencia
+19,Cauca,42,Pacífica,Popayán
+20,Cesar,25,Caribe,Valledupar
+23,Córdoba,30,Caribe,Montería
+25,Cundinamarca,116,Andina,Agua de Dios
+27,Chocó,31,Pacífica,Quibdó
+41,Huila,37,Andina,Neiva
+44,La Guajira,15,Caribe,Riohacha
+47,Magdalena,30,Caribe,Santa Marta
+50,Meta,29,Orinoquía,Villavicencio
+52,Nariño,64,Pacífica,Pasto
+54,Norte de Santander,40,Andina,San José de Cúcuta
+63,Quindío,12,Andina,Armenia
+66,Risaralda,14,Andina,Pereira
+68,Santander,87,Andina,Bucaramanga
+70,Sucre,26,Caribe,Sincelejo
+73,Tolima,47,Andina,Ibagué
+76,Valle del Cauca,42,Pacífica,Santiago de Cali
+81,Arauca,7,Orinoquía,Arauca
+85,Casanare,19,Orinoquía,Yopal
+86,Putumayo,13,Amazonía,Mocoa
+88,"Archipiélago de San Andrés, Providencia y Santa Catalina",2,Caribe,San Andrés
+91,Amazonas,11,Amazonía,Leticia
+94,Guainía,8,Amazonía,Inírida
+95,Guaviare,4,Amazonía,San José del Guaviare
+97,Vaupés,6,Amazonía,Mitú
+99,Vichada,4,Orinoquía,Puerto Carreño

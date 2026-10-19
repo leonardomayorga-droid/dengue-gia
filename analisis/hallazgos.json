@@ -1,0 +1,318 @@
+{
+  "anio_analisis": 2025,
+  "figuras": [
+    "fig1_serie_nacional.png",
+    "fig2_canal_endemico.png",
+    "fig3_incidencia_departamentos.png",
+    "fig4_mapa_calor_semanal.png",
+    "fig5_rezago_clima.png",
+    "fig8_clima_anual.png",
+    "fig6_edad_sexo.png",
+    "fig7_priorizacion.png"
+  ],
+  "resumen_anual": [
+    {
+      "anio": 2019,
+      "casos": 124331,
+      "graves": 1339,
+      "fallecidos": 120,
+      "hospitalizados": 60772,
+      "incidencia_100k": 252.36,
+      "letalidad_pct": 0.1,
+      "pct_grave": 1.08,
+      "pct_hosp": 48.88
+    },
+    {
+      "anio": 2020,
+      "casos": 77080,
+      "graves": 860,
+      "fallecidos": 70,
+      "hospitalizados": 35194,
+      "incidencia_100k": 152.96,
+      "letalidad_pct": 0.09,
+      "pct_grave": 1.12,
+      "pct_hosp": 45.66
+    },
+    {
+      "anio": 2021,
+      "casos": 50106,
+      "graves": 932,
+      "fallecidos": 73,
+      "hospitalizados": 25443,
+      "incidencia_100k": 98.02,
+      "letalidad_pct": 0.15,
+      "pct_grave": 1.86,
+      "pct_hosp": 50.78
+    },
+    {
+      "anio": 2022,
+      "casos": 66758,
+      "graves": 1330,
+      "fallecidos": 82,
+      "hospitalizados": 35821,
+      "incidencia_100k": 129.27,
+      "letalidad_pct": 0.12,
+      "pct_grave": 1.99,
+      "pct_hosp": 53.66
+    },
+    {
+      "anio": 2023,
+      "casos": 127882,
+      "graves": 1716,
+      "fallecidos": 117,
+      "hospitalizados": 58159,
+      "incidencia_100k": 245.37,
+      "letalidad_pct": 0.09,
+      "pct_grave": 1.34,
+      "pct_hosp": 45.48
+    },
+    {
+      "anio": 2024,
+      "casos": 312154,
+      "graves": 2988,
+      "fallecidos": 279,
+      "hospitalizados": 109264,
+      "incidencia_100k": 593.29,
+      "letalidad_pct": 0.09,
+      "pct_grave": 0.96,
+      "pct_hosp": 35.0
+    },
+    {
+      "anio": 2025,
+      "casos": 121543,
+      "graves": 1260,
+      "fallecidos": 133,
+      "hospitalizados": 45930,
+      "incidencia_100k": 229.08,
+      "letalidad_pct": 0.11,
+      "pct_grave": 1.04,
+      "pct_hosp": 37.79
+    }
+  ],
+  "casos_municipio_semana": {
+    "count": 116880.0,
+    "mean": 7.53,
+    "std": 27.21,
+    "min": 0.0,
+    "25%": 1.0,
+    "50%": 2.0,
+    "75%": 6.0,
+    "90%": 14.0,
+    "99%": 100.0,
+    "max": 1307.0,
+    "asimetria": 19.06
+  },
+  "concentracion_top10_municipios_pct": 31.2,
+  "top10_municipios": [
+    {
+      "cod_mpio": "13001",
+      "casos": 7234,
+      "municipio": "Cartagena de Indias",
+      "departamento": "Bolívar"
+    },
+    {
+      "cod_mpio": "50001",
+      "casos": 5572,
+      "municipio": "Villavicencio",
+      "departamento": "Meta"
+    },
+    {
+      "cod_mpio": "23001",
+      "casos": 4936,
+      "municipio": "Montería",
+      "departamento": "Córdoba"
+    },
+    {
+      "cod_mpio": "54001",
+      "casos": 4867,
+      "municipio": "San José de Cúcuta",
+      "departamento": "Norte de Santander"
+    },
+    {
+      "cod_mpio": "08001",
+      "casos": 3799,
+      "municipio": "Barranquilla",
+      "departamento": "Atlántico"
+    },
+    {
+      "cod_mpio": "68001",
+      "casos": 3253,
+      "municipio": "Bucaramanga",
+      "departamento": "Santander"
+    },
+    {
+      "cod_mpio": "76001",
+      "casos": 3085,
+      "municipio": "Santiago de Cali",
+      "departamento": "Valle del Cauca"
+    },
+    {
+      "cod_mpio": "47001",
+      "casos": 1758,
+      "municipio": "Santa Marta",
+      "departamento": "Magdalena"
+    },
+    {
+      "cod_mpio": "08758",
+      "casos": 1725,
+      "municipio": "Soledad",
+      "departamento": "Atlántico"
+    },
+    {
+      "cod_mpio": "68276",
+      "casos": 1722,
+      "municipio": "Floridablanca",
+      "departamento": "Santander"
+    }
+  ],
+  "pico": {
+    "id_semana": 202421,
+    "casos": 9396
+  },
+  "semanas_por_zona": {
+    "Éxito": 27,
+    "Alerta": 13,
+    "Epidemia": 8,
+    "Seguridad": 5
+  },
+  "incidencia_nacional_100k": 229.1,
+  "top5_incidencia": [
+    {
+      "departamento": "Guaviare",
+      "casos": 974,
+      "incidencia": 1150.0
+    },
+    {
+      "departamento": "Arauca",
+      "casos": 2608,
+      "incidencia": 934.1
+    },
+    {
+      "departamento": "Meta",
+      "casos": 10398,
+      "incidencia": 899.2
+    },
+    {
+      "departamento": "Putumayo",
+      "casos": 2852,
+      "incidencia": 729.9
+    },
+    {
+      "departamento": "Caquetá",
+      "casos": 2297,
+      "incidencia": 535.4
+    }
+  ],
+  "rezago_optimo_precip_mm": {
+    "semanas": 6,
+    "rho_mediana": 0.148,
+    "pct_municipios_positivos": 82.5,
+    "n_municipios": 40
+  },
+  "rezago_optimo_temp_media_c": {
+    "semanas": 7,
+    "rho_mediana": 0.129,
+    "pct_municipios_positivos": 67.5,
+    "n_municipios": 40
+  },
+  "clima_anual": [
+    {
+      "anio": 2022,
+      "anom_temp_c": -0.84,
+      "anom_precip_pct": 11.72,
+      "casos": 30253,
+      "municipios": 40,
+      "rho_temp_casos": 0.692,
+      "pct_municipios_positivos": 92.5
+    },
+    {
+      "anio": 2023,
+      "anom_temp_c": 0.19,
+      "anom_precip_pct": -10.6,
+      "casos": 66039,
+      "municipios": 40,
+      "rho_temp_casos": 0.692,
+      "pct_municipios_positivos": 92.5
+    },
+    {
+      "anio": 2024,
+      "anom_temp_c": 0.57,
+      "anom_precip_pct": -5.0,
+      "casos": 178554,
+      "municipios": 40,
+      "rho_temp_casos": 0.692,
+      "pct_municipios_positivos": 92.5
+    },
+    {
+      "anio": 2025,
+      "anom_temp_c": 0.09,
+      "anom_precip_pct": 3.88,
+      "casos": 58056,
+      "municipios": 40,
+      "rho_temp_casos": 0.692,
+      "pct_municipios_positivos": 92.5
+    }
+  ],
+  "rho_temp_casos_entre_anios": 0.692,
+  "pct_municipios_temp_positiva": 92.5,
+  "grupo_edad_mas_casos": "5-14",
+  "pct_casos_menores_15": 45.0,
+  "top5_priorizacion": [
+    {
+      "departamento": "Meta",
+      "ip": 69.6,
+      "casos": 10398,
+      "incidencia_100k": 899.17,
+      "fallecidos": 10,
+      "letalidad_pct": 0.1,
+      "letalidad_suav_pct": 0.1,
+      "tendencia_4s_pct": 22.66,
+      "senal_clima": -0.45
+    },
+    {
+      "departamento": "Risaralda",
+      "ip": 58.7,
+      "casos": 1072,
+      "incidencia_100k": 106.86,
+      "fallecidos": 4,
+      "letalidad_pct": 0.37,
+      "letalidad_suav_pct": 0.25,
+      "tendencia_4s_pct": 25.71,
+      "senal_clima": 0.3
+    },
+    {
+      "departamento": "La Guajira",
+      "ip": 57.6,
+      "casos": 3488,
+      "incidencia_100k": 327.0,
+      "fallecidos": 12,
+      "letalidad_pct": 0.34,
+      "letalidad_suav_pct": 0.29,
+      "tendencia_4s_pct": 9.97,
+      "senal_clima": -0.25
+    },
+    {
+      "departamento": "Bolívar",
+      "ip": 52.7,
+      "casos": 11798,
+      "incidencia_100k": 526.4,
+      "fallecidos": 12,
+      "letalidad_pct": 0.1,
+      "letalidad_suav_pct": 0.1,
+      "tendencia_4s_pct": 7.03,
+      "senal_clima": -0.56
+    },
+    {
+      "departamento": "Putumayo",
+      "ip": 51.9,
+      "casos": 2852,
+      "incidencia_100k": 729.89,
+      "fallecidos": 5,
+      "letalidad_pct": 0.18,
+      "letalidad_suav_pct": 0.16,
+      "tendencia_4s_pct": -17.33,
+      "senal_clima": 0.48
+    }
+  ],
+  "n_prioridad_alta": 10
+}

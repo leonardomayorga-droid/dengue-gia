@@ -1,0 +1,251 @@
+1
+00:00:00,000 --> 00:00:02,920
+Leonardo: Somos el equipo de Global Insights Analytics.
+
+2
+00:00:02,920 --> 00:00:06,720
+Leonardo: Un cliente del sector salud nos pidió una respuesta concreta:
+
+3
+00:00:06,720 --> 00:00:11,720
+Leonardo: ¿dónde concentrar los recursos contra el dengue y con cuánta anticipación actuar?
+
+4
+00:00:11,720 --> 00:00:15,200
+Leonardo: El dengue es la arbovirosis de mayor carga en Colombia.
+
+5
+00:00:15,200 --> 00:00:23,080
+Leonardo: Su comportamiento es estacional y ligado al clima, así que la decisión no puede tomarse mirando solo el acumulado del año.
+
+6
+00:00:23,080 --> 00:00:26,400
+Leonardo: El tablero sigue un arco narrativo de seis preguntas:
+
+7
+00:00:26,400 --> 00:00:34,240
+Leonardo: cómo estamos, dónde se concentra, si estamos por encima de lo esperado, qué dice el clima, qué viene y dónde intervenir primero.
+
+8
+00:00:34,240 --> 00:00:42,760
+Leonardo: En 2025 se notificaron 121.543 casos, 229 por cada 100.000 habitantes:
+
+9
+00:00:42,760 --> 00:00:47,200
+Leonardo: 61 % menos que en la epidemia récord de 2024.
+
+10
+00:00:47,200 --> 00:00:48,320
+Leonardo: Pero ojo:
+
+11
+00:00:48,320 --> 00:00:58,760
+Leonardo: el 1,04 % fue dengue grave, el 37,8 % de los casos requirió hospitalización y la letalidad subió a 0,11 %.
+
+12
+00:00:58,760 --> 00:01:01,600
+Leonardo: Menos casos no significa menos riesgo.
+
+13
+00:01:01,600 --> 00:01:12,200
+Leonardo: Además, ocho departamentos crecieron frente a 2024, encabezados por Magdalena, que más que duplicó sus casos, y La Guajira, con 84 % más.
+
+14
+00:01:12,200 --> 00:01:16,240
+Dayanis: Integramos seis fuentes heterogéneas:
+
+15
+00:01:16,240 --> 00:01:28,080
+Dayanis: los microdatos del SIVIGILA en hojas de cálculo, la API de DIVIPOLA, la API histórica de Open-Meteo, su pronóstico en tiempo real,
+
+16
+00:01:28,080 --> 00:01:36,280
+Dayanis: las proyecciones del DANE y, como fuente no estructurada, el texto de los boletines epidemiológicos del INS.
+
+17
+00:01:36,280 --> 00:01:40,160
+Dayanis: Usamos una arquitectura por capas:
+
+18
+00:01:40,160 --> 00:01:46,440
+Dayanis: bronce guarda los datos tal como llegan, plata los limpia y los tipa en Parquet,
+
+19
+00:01:46,440 --> 00:01:52,400
+Dayanis: y oro es el modelo estrella que consume Power BI, también disponible en SQLite.
+
+20
+00:01:52,400 --> 00:02:01,120
+Dayanis: Cargamos 883 mil registros de 2019 a 2025 y aplicamos siete reglas documentadas en esta bitácora.
+
+21
+00:02:01,120 --> 00:02:13,680
+Dayanis: Por ejemplo, excluimos 2.341 casos ocurridos fuera del país y evitamos contar dos veces 86 muertes que aparecían en dos eventos.
+
+22
+00:02:13,680 --> 00:02:23,200
+Dayanis: Al contrastar con el boletín del INS, nuestra cifra de 2025 difiere apenas 1,8 %.
+
+23
+00:02:23,200 --> 00:02:30,880
+Dayanis: En el análisis exploratorio vimos que los casos semanales por municipio son muy asimétricos:
+
+24
+00:02:30,880 --> 00:02:35,800
+Dayanis: mediana de 2, máximo de 1.307.
+
+25
+00:02:35,800 --> 00:02:39,760
+Dayanis: Por eso usamos correlación de Spearman y no de Pearson.
+
+26
+00:02:39,760 --> 00:02:46,600
+Angie: El volumen se concentra en pocos lugares:
+
+27
+00:02:46,600 --> 00:02:54,720
+Angie: los diez municipios con más casos, encabezados por Cartagena, Villavicencio, Montería y Cúcuta, aportan el 31 % del total.
+
+28
+00:02:54,720 --> 00:03:03,920
+Angie: Pero la incidencia cuenta otra historia:
+
+29
+00:03:03,920 --> 00:03:11,080
+Angie: Guaviare tiene 1.150 casos por 100.000 habitantes, cinco veces el promedio nacional, seguido de Arauca y Meta.
+
+30
+00:03:11,080 --> 00:03:15,680
+Angie: El mapa es interactivo:
+
+31
+00:03:15,680 --> 00:03:21,080
+Angie: al hacer clic en un departamento, toda la página se filtra a ese territorio.
+
+32
+00:03:21,080 --> 00:03:37,520
+Angie: Para saber si un número es alto hay que compararlo con lo esperado. Este es el canal endémico:
+
+33
+00:03:37,520 --> 00:03:44,120
+Angie: las líneas muestran los cuartiles de los años de referencia y la línea azul, los casos de 2025.
+
+34
+00:03:44,120 --> 00:03:51,760
+Angie: En 2025, 21 semanas estuvieron en alerta o epidemia, todas en la primera mitad del año:
+
+35
+00:03:51,760 --> 00:03:57,920
+Angie: era la cola de la epidemia de 2024, que llegó a 9.396 casos en una sola semana.
+
+36
+00:03:57,920 --> 00:04:03,360
+Angie: El semáforo lo resume semana a semana:
+
+37
+00:04:03,360 --> 00:04:12,360
+Angie: rojo y naranja al inicio y verde desde la mitad del año.
+
+38
+00:04:12,360 --> 00:04:16,560
+Angie: Hoy estamos por debajo de lo esperado.
+
+39
+00:04:16,560 --> 00:04:22,040
+Dayanis: ¿Podemos anticipar la temporada?
+
+40
+00:04:22,040 --> 00:04:25,840
+Dayanis: Entre años, los más cálidos tienen más dengue:
+
+41
+00:04:25,840 --> 00:04:30,920
+Dayanis: 2022 fue el más frío y tuvo 30 mil casos en estos municipios;
+
+42
+00:04:30,920 --> 00:04:39,960
+Dayanis: 2024, con El Niño, casi 179 mil.
+
+43
+00:04:39,960 --> 00:04:47,560
+Dayanis: La correlación es de 0,69 y es positiva en el 93 % de los municipios.
+
+44
+00:04:47,560 --> 00:04:56,920
+Dayanis: Dentro de cada año, la lluvia antecede los casos unas seis semanas, pero con un efecto débil: correlación de 0,15.
+
+45
+00:04:56,920 --> 00:05:06,480
+Dayanis: El segmentador de rezago desplaza la curva de lluvia de cero a doce semanas para explorar esa relación. Conclusión:
+
+46
+00:05:06,480 --> 00:05:20,440
+Dayanis: la temperatura sirve para dimensionar la temporada y la lluvia, como apoyo para el momento. Son asociaciones, no causalidad.
+
+47
+00:05:20,440 --> 00:05:27,800
+Angie: Esta página se alimenta del pronóstico de Open-Meteo consultado el 19 de octubre de 2026.
+
+48
+00:05:27,800 --> 00:05:35,840
+Angie: Combinamos la lluvia y la temperatura de las últimas ocho semanas con el pronóstico de 16 días frente a lo normal.
+
+49
+00:05:35,840 --> 00:05:42,320
+Angie: Hoy, 3 de 40 municipios tienen señal climática alta:
+
+50
+00:05:42,320 --> 00:05:48,440
+Angie: Tumaco, con lluvias 128 % sobre lo normal; Pitalito, 2 grados más cálido; y Popayán.
+
+51
+00:05:48,440 --> 00:05:56,960
+Leonardo: Integramos todo en un índice de priorización de 0 a 100 que pondera incidencia, carga, severidad, letalidad, tendencia y señal climática.
+
+52
+00:05:56,960 --> 00:06:04,320
+Leonardo: Diez departamentos quedan en prioridad alta, encabezados por Meta, Risaralda, La Guajira, Bolívar y Putumayo.
+
+53
+00:06:04,320 --> 00:06:08,400
+Leonardo: Risaralda y La Guajira no entran por volumen sino por letalidad:
+
+54
+00:06:08,400 --> 00:06:10,360
+Leonardo: más del doble de la nacional.
+
+55
+00:06:10,360 --> 00:06:16,880
+Angie: Lo contrastamos con el texto de los boletines del INS: Meta y Vichada coinciden;
+
+56
+00:06:16,880 --> 00:06:23,680
+Angie: Guaviare y Magdalena aparecen en las alertas del INS y quedan para revisión.
+
+57
+00:06:23,680 --> 00:06:25,880
+Leonardo: Recomendamos tres acciones:
+
+58
+00:06:25,880 --> 00:06:33,800
+Leonardo: uno, control vectorial y búsqueda activa en Meta, Bolívar, Putumayo, Vichada, Cesar, Arauca y Norte de Santander;
+
+59
+00:06:33,800 --> 00:06:39,240
+Leonardo: dos, auditoría de muertes y manejo clínico del dengue grave en Risaralda, La Guajira y Huila;
+
+60
+00:06:39,240 --> 00:06:42,880
+Leonardo: tres, alerta climática en los municipios con señal alta.
+
+61
+00:06:42,880 --> 00:06:44,440
+Leonardo: En síntesis:
+
+62
+00:06:44,440 --> 00:06:48,280
+Leonardo: el dengue no se distribuye ni se mueve igual en todo el país.
+
+63
+00:06:48,280 --> 00:06:54,680
+Leonardo: Mirar incidencia, severidad y clima a la vez permite actuar antes y donde más impacto tiene. Gracias.
