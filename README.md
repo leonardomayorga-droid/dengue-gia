@@ -12,7 +12,7 @@ Especialización en Big Data y Analítica de Datos, Corporación Universitaria d
 |---|---|
 | Tablero publicado en Power BI Service | [Abrir el tablero](https://app.powerbi.com/view?r=eyJrIjoiMjgyZjMzZjAtNGZhNy00ZmM2LTkyNzktY2RjZjgxNzBmODcyIiwidCI6IjllY2IyMTZlLTQ0OWItNDU4NC1iYzgyLTI2YmNlNzg1NzRmYiIsImMiOjR9) |
 | Informe final (8 páginas) | [`informe/Informe_final.pdf`](informe/Informe_final.pdf) |
-| Video de la presentación (7 min) | [`video/video_dengue.mp4`](video/video_dengue.mp4) · guion en [`video/guion_video.md`](video/guion_video.md) |
+| Video de la presentación (6 min) | [`video/video_dengue.mp4`](video/video_dengue.mp4) · guion en [`video/guion_video.md`](video/guion_video.md) |
 | Archivo del tablero y medidas DAX | [`tablero/`](tablero/) |
 | Conjunto de datos del modelo | [`datos/`](datos/) |
 | Análisis exploratorio | [`analisis/`](analisis/) |
